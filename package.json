@@ -1,0 +1,32 @@
+{
+  "name": "echomem",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tsconfig/svelte": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.3.3",
+    "svelte": "^5.20.2",
+    "svelte-check": "^4.1.5",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^0.21.1"
+  },
+  "dependencies": {
+    "dexie": "^4.0.11",
+    "svelte-spa-router": "^4.0.1"
+  }
+}
