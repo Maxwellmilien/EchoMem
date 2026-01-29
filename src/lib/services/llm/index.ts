@@ -11,5 +11,6 @@ export { mockLLMProvider } from './mock';
 export { openaiProvider } from './openai';
 export { anthropicProvider } from './anthropic';
 export { ollamaProvider } from './ollama';
+export { mistralProvider } from './mistral';
 export { getLLMProvider, configureLLMProvider, type LLMProviderType } from './provider';
 export { buildPrompt, parseResponse } from './prompts';

@@ -3,14 +3,16 @@ import { mockLLMProvider } from './mock';
 import { openaiProvider } from './openai';
 import { anthropicProvider } from './anthropic';
 import { ollamaProvider } from './ollama';
+import { mistralProvider } from './mistral';
 
-export type LLMProviderType = 'mock' | 'openai' | 'anthropic' | 'ollama';
+export type LLMProviderType = 'mock' | 'openai' | 'anthropic' | 'ollama' | 'mistral';
 
 const providers: Record<LLMProviderType, LLMProvider> = {
   mock: mockLLMProvider,
   openai: openaiProvider,
   anthropic: anthropicProvider,
-  ollama: ollamaProvider
+  ollama: ollamaProvider,
+  mistral: mistralProvider
 };
 
 export function getLLMProvider(type: LLMProviderType): LLMProvider {
@@ -32,6 +34,9 @@ export function configureLLMProvider(
       break;
     case 'ollama':
       ollamaProvider.configure(model, options?.baseUrl as string);
+      break;
+    case 'mistral':
+      mistralProvider.configure(apiKey ?? '', model);
       break;
   }
 }

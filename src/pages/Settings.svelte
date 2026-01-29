@@ -172,6 +172,7 @@
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
             <option value="ollama">Ollama (Local)</option>
+            <option value="mistral">Mistral</option>
           </select>
         </div>
 
@@ -198,7 +199,7 @@
               bind:value={llmModel}
               on:change={saveLLMSettings}
               class="input"
-              placeholder={llmProvider === 'openai' ? 'gpt-4o-mini' : llmProvider === 'anthropic' ? 'claude-3-haiku-20240307' : 'llama2'}
+              placeholder={llmProvider === 'openai' ? 'gpt-4o-mini' : llmProvider === 'anthropic' ? 'claude-3-haiku-20240307' : llmProvider === 'mistral' ? 'mistral-small-latest' : 'llama2'}
             />
           </div>
         {/if}
