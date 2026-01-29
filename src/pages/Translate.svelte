@@ -10,6 +10,11 @@
     type TranslationProviderType
   } from '$lib/services/translation';
   import type { TranslationResult, TranslationError } from '$lib/services/translation';
+  import {
+    getDictionaryProvider,
+    type DictionaryProviderType
+  } from '$lib/services/dictionary';
+  import type { DictionaryResult, DictionaryError } from '$lib/services/dictionary';
   import type { Deck } from '$lib/types/deck';
 
   let text = '';
@@ -18,6 +23,10 @@
   let result: TranslationResult | null = null;
   let error: string | null = null;
   let loading = false;
+
+  let dictResult: DictionaryResult | null = null;
+  let dictError: string | null = null;
+  let dictLoading = false;
 
   let showAddCardModal = false;
   let selectedDeckId: number | null = null;
@@ -55,6 +64,31 @@
       error = err.message || 'Translation failed';
     } finally {
       loading = false;
+    }
+
+    const isSingleWord = text.trim().split(/\s+/).length === 1;
+    if (isSingleWord) {
+      handleLookup();
+    }
+  }
+
+  async function handleLookup() {
+    const word = text.trim();
+    if (!word) return;
+
+    dictLoading = true;
+    dictError = null;
+    dictResult = null;
+
+    try {
+      const s = await settings.load();
+      const provider = getDictionaryProvider(s.dictionaryProvider as DictionaryProviderType);
+      dictResult = await provider.lookup(word, sourceLang);
+    } catch (e) {
+      const err = e as DictionaryError;
+      dictError = err.message || 'Dictionary lookup failed';
+    } finally {
+      dictLoading = false;
     }
   }
 
@@ -162,6 +196,76 @@
             </svg>
             Create Flashcard
           </button>
+        </div>
+      </div>
+    {/if}
+
+    {#if text.trim() && !dictResult && !dictLoading && !dictError}
+      <button
+        class="btn-secondary w-full"
+        on:click={handleLookup}
+        disabled={dictLoading}
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        Look up
+      </button>
+    {/if}
+
+    {#if dictLoading}
+      <div class="card">
+        <div class="flex items-center gap-2 text-slate-400">
+          <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Looking up definition...
+        </div>
+      </div>
+    {/if}
+
+    {#if dictError}
+      <div class="card bg-yellow-900/20 border border-yellow-700/50">
+        <p class="text-yellow-300 text-sm">{dictError}</p>
+      </div>
+    {/if}
+
+    {#if dictResult}
+      <div class="card">
+        <h3 class="text-sm font-medium text-slate-400 mb-2">Dictionary</h3>
+
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="text-xl font-semibold text-slate-100">{dictResult.word}</span>
+          {#if dictResult.phonetic}
+            <span class="text-sm text-slate-400">{dictResult.phonetic}</span>
+          {/if}
+        </div>
+
+        <div class="space-y-4">
+          {#each dictResult.meanings as meaning}
+            <div>
+              <h4 class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">
+                {meaning.partOfSpeech}
+              </h4>
+              <ol class="space-y-2">
+                {#each meaning.definitions as def, i}
+                  <li class="text-sm text-slate-300">
+                    <span class="text-slate-500 mr-1">{i + 1}.</span>
+                    {def.definition}
+                    {#if def.example}
+                      <p class="text-slate-500 italic mt-0.5 ml-4">"{def.example}"</p>
+                    {/if}
+                    {#if def.synonyms && def.synonyms.length > 0}
+                      <p class="text-slate-500 mt-0.5 ml-4">
+                        <span class="text-slate-600">Synonyms:</span> {def.synonyms.join(', ')}
+                      </p>
+                    {/if}
+                  </li>
+                {/each}
+              </ol>
+            </div>
+          {/each}
         </div>
       </div>
     {/if}

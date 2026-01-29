@@ -9,6 +9,8 @@
   let llmProvider = 'mock';
   let llmApiKey = '';
   let llmModel = '';
+  let dictionaryProvider = 'mock';
+  let dictionaryApiKey = '';
 
   onMount(async () => {
     const s = await settings.load();
@@ -19,6 +21,8 @@
     llmProvider = s.llmProvider;
     llmApiKey = s.llmApiKey ?? '';
     llmModel = s.llmModel ?? '';
+    dictionaryProvider = s.dictionaryProvider;
+    dictionaryApiKey = s.dictionaryApiKey ?? '';
   });
 
   async function saveStudySettings() {
@@ -37,6 +41,13 @@
       llmProvider,
       llmApiKey: llmApiKey || undefined,
       llmModel: llmModel || undefined
+    });
+  }
+
+  async function saveDictionarySettings() {
+    await settings.update({
+      dictionaryProvider,
+      dictionaryApiKey: dictionaryApiKey || undefined
     });
   }
 </script>
@@ -103,6 +114,40 @@
               id="transApiKey"
               bind:value={translationApiKey}
               on:change={saveTranslationSettings}
+              class="input"
+              placeholder="Enter your API key"
+            />
+          </div>
+        {/if}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4">Dictionary API</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label for="dictProvider" class="label">Provider</label>
+          <select
+            id="dictProvider"
+            bind:value={dictionaryProvider}
+            on:change={saveDictionarySettings}
+            class="input"
+          >
+            <option value="mock">Mock (Demo)</option>
+            <option value="free-dictionary">Free Dictionary API</option>
+            <option value="wiktionary">Wiktionary</option>
+          </select>
+        </div>
+
+        {#if dictionaryProvider !== 'mock' && dictionaryProvider !== 'free-dictionary' && dictionaryProvider !== 'wiktionary'}
+          <div>
+            <label for="dictApiKey" class="label">API Key</label>
+            <input
+              type="password"
+              id="dictApiKey"
+              bind:value={dictionaryApiKey}
+              on:change={saveDictionarySettings}
               class="input"
               placeholder="Enter your API key"
             />

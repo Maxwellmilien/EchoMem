@@ -5,6 +5,8 @@ export interface Settings {
   llmProvider: string;
   llmApiKey?: string;
   llmModel?: string;
+  dictionaryProvider: string;
+  dictionaryApiKey?: string;
   dailyNewCards: number;
   dailyReviewCards: number;
   theme: 'dark' | 'light' | 'system';
@@ -15,6 +17,7 @@ export function createDefaultSettings(): Settings {
     id: 1,
     translationProvider: 'mock',
     llmProvider: 'mock',
+    dictionaryProvider: 'mock',
     dailyNewCards: 20,
     dailyReviewCards: 100,
     theme: 'dark'
