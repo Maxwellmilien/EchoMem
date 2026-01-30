@@ -63,18 +63,21 @@ export class WiktionaryProvider implements DictionaryProvider {
     }
 
     const data: WiktionaryResponse = await response.json();
-    return this.parseResponse(word, data);
+    return this.parseResponse(word, data, lang);
   }
 
   private stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '').trim();
   }
 
-  private parseResponse(word: string, data: WiktionaryResponse): DictionaryResult {
+  private parseResponse(word: string, data: WiktionaryResponse, lang: string): DictionaryResult {
     const meanings: DictionaryMeaning[] = [];
 
-    for (const entries of Object.values(data)) {
-      for (const entry of entries) {
+    // Filter by language code - only process entries for the requested language
+    const langEntries = data[lang];
+
+    if (langEntries && Array.isArray(langEntries)) {
+      for (const entry of langEntries) {
         if (entry.definitions.length === 0) continue;
 
         meanings.push({
@@ -93,7 +96,7 @@ export class WiktionaryProvider implements DictionaryProvider {
     if (meanings.length === 0) {
       const error: DictionaryError = {
         code: 'NOT_FOUND',
-        message: `No definition found for "${word}"`
+        message: `No definition found for "${word}" in the requested language`
       };
       throw error;
     }
