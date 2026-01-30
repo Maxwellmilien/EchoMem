@@ -102,6 +102,7 @@
           >
             <option value="mock">Mock (Demo)</option>
             <option value="deepl">DeepL</option>
+            <option value="google">Google Translate</option>
             <option value="libretranslate">LibreTranslate</option>
           </select>
         </div>

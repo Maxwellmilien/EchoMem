@@ -59,6 +59,10 @@
 
     try {
       const s = await settings.load();
+      configureTranslationProvider(
+        s.translationProvider as TranslationProviderType,
+        s.translationApiKey
+      );
       const provider = getTranslationProvider(s.translationProvider as TranslationProviderType);
       result = await provider.translate(text.trim(), sourceLang, targetLang);
     } catch (e) {
