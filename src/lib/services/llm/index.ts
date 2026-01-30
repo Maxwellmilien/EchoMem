@@ -4,7 +4,10 @@ export type {
   GenerationResult,
   GeneratedCard,
   GenerationType,
-  LLMError
+  LLMError,
+  WordForm,
+  WordAnalysisResult,
+  WordFormGenerationRequest
 } from './types';
 export { GENERATION_TYPE_LABELS } from './types';
 export { mockLLMProvider } from './mock';
@@ -13,4 +16,4 @@ export { anthropicProvider } from './anthropic';
 export { ollamaProvider } from './ollama';
 export { mistralProvider } from './mistral';
 export { getLLMProvider, configureLLMProvider, type LLMProviderType } from './provider';
-export { buildPrompt, parseResponse } from './prompts';
+export { buildPrompt, parseResponse, buildWordAnalysisPrompt, parseWordAnalysis, buildWordFormSentencesPrompt } from './prompts';

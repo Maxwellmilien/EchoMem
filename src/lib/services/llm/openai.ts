@@ -1,5 +1,12 @@
-import type { LLMProvider, GenerationRequest, GenerationResult, LLMError } from './types';
-import { buildPrompt, parseResponse } from './prompts';
+import type {
+  LLMProvider,
+  GenerationRequest,
+  GenerationResult,
+  LLMError,
+  WordAnalysisResult,
+  WordFormGenerationRequest
+} from './types';
+import { buildPrompt, parseResponse, buildWordAnalysisPrompt, parseWordAnalysis, buildWordFormSentencesPrompt } from './prompts';
 
 export class OpenAIProvider implements LLMProvider {
   name = 'OpenAI';
@@ -39,6 +46,113 @@ export class OpenAIProvider implements LLMProvider {
           ],
           temperature: 0.7,
           max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw this.createError('AUTH_ERROR', 'Invalid API key');
+        }
+        if (response.status === 429) {
+          throw this.createError('RATE_LIMIT', 'Rate limit exceeded');
+        }
+        throw this.createError('UNKNOWN', `HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || '';
+      const cards = parseResponse(content);
+
+      return {
+        word: request.word,
+        cards
+      };
+    } catch (error) {
+      if ((error as LLMError).code) {
+        throw error;
+      }
+      throw this.createError('NETWORK_ERROR', 'Failed to connect to OpenAI API');
+    }
+  }
+
+  async analyzeWord(word: string, sourceLang: string): Promise<WordAnalysisResult> {
+    if (!this.apiKey) {
+      throw this.createError('AUTH_ERROR', 'API key not configured');
+    }
+
+    const prompt = buildWordAnalysisPrompt(word, sourceLang);
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw this.createError('AUTH_ERROR', 'Invalid API key');
+        }
+        if (response.status === 429) {
+          throw this.createError('RATE_LIMIT', 'Rate limit exceeded');
+        }
+        throw this.createError('UNKNOWN', `HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || '';
+      return parseWordAnalysis(content);
+    } catch (error) {
+      if ((error as LLMError).code) {
+        throw error;
+      }
+      throw this.createError('NETWORK_ERROR', 'Failed to connect to OpenAI API');
+    }
+  }
+
+  async generateSentences(request: WordFormGenerationRequest): Promise<GenerationResult> {
+    if (!this.apiKey) {
+      throw this.createError('AUTH_ERROR', 'API key not configured');
+    }
+
+    const prompt = buildWordFormSentencesPrompt(
+      request.word,
+      request.sourceLang,
+      request.targetLang,
+      request.forms,
+      request.includeExpressions
+    );
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
         })
       });
 

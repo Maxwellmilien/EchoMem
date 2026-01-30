@@ -1,4 +1,12 @@
-import type { LLMProvider, GenerationRequest, GenerationResult, GeneratedCard, GenerationType } from './types';
+import type {
+  LLMProvider,
+  GenerationRequest,
+  GenerationResult,
+  GeneratedCard,
+  GenerationType,
+  WordAnalysisResult,
+  WordFormGenerationRequest
+} from './types';
 
 const MOCK_RESPONSES: Record<string, Record<GenerationType, { front: string; back: string }>> = {
   'hello:en:fr': {
@@ -76,10 +84,62 @@ export class MockLLMProvider implements LLMProvider {
     const cards: GeneratedCard[] = request.types
       .filter((type) => responses[type])
       .map((type) => ({
-        type,
+        type: type,
         front: responses[type].front.replace(/this word/g, request.word),
         back: responses[type].back
       }));
+
+    return {
+      word: request.word,
+      cards
+    };
+  }
+
+  async analyzeWord(word: string): Promise<WordAnalysisResult> {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Mock data based on common patterns
+    if (word.endsWith('ing')) {
+      // Probably a gerund
+      return {
+        word,
+        forms: [
+          { category: 'verb', formType: 'infinitive', text: word.slice(0, -3) },
+          { category: 'verb', formType: 'gerund', text: word }
+        ]
+      };
+    }
+
+    // Default example (verb + noun)
+    return {
+      word,
+      forms: [
+        { category: 'verb', formType: 'infinitive', text: word },
+        { category: 'verb', formType: '3rd_person', text: word + 's' },
+        { category: 'verb', formType: 'past', text: word + 'ed' },
+        { category: 'verb', formType: 'gerund', text: word + 'ing' },
+        { category: 'noun', formType: 'singular', text: word },
+        { category: 'noun', formType: 'plural', text: word + 's' }
+      ]
+    };
+  }
+
+  async generateSentences(request: WordFormGenerationRequest): Promise<GenerationResult> {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const cards: GeneratedCard[] = request.forms.map((form) => ({
+      type: `${form.category}:${form.formType}`,
+      front: `Example sentence with "${form.text}" (${form.category} - ${form.formType}) in ${request.sourceLang}.`,
+      back: `Phrase d'exemple avec "${form.text}" (${form.category} - ${form.formType}) en ${request.targetLang}.`
+    }));
+
+    if (request.includeExpressions) {
+      cards.push({
+        type: 'expression',
+        front: `Common expression with "${request.word}" in ${request.sourceLang}.`,
+        back: `Expression courante avec "${request.word}" en ${request.targetLang}.`
+      });
+    }
 
     return {
       word: request.word,
