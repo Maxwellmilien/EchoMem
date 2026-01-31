@@ -37,9 +37,9 @@
   <div class="flex justify-between items-start gap-2 mb-2">
     <p class="font-medium text-slate-100 flex-1">{card.front}</p>
     <span
-      class="px-2 py-0.5 text-xs font-medium text-white rounded {getStateColor(card.srsData.state)}"
+      class="px-2 py-0.5 text-xs font-medium text-white rounded {getStateColor(card.forwardSrsData.state)}"
     >
-      {getStateLabel(card.srsData.state)}
+      {getStateLabel(card.forwardSrsData.state)}
     </span>
   </div>
   <p class="text-sm text-slate-400">{card.back}</p>

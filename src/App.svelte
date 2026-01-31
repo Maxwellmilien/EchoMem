@@ -20,6 +20,7 @@
     '/deck/:id/card/new': CardNew,
     '/deck/:id/card/:cardId': CardEdit,
     '/deck/:id/study': Study,
+    '/deck/:id/study/:direction': Study,
     '/translate': Translate,
     '/generate': Generate,
     '/settings': Settings

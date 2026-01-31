@@ -7,6 +7,7 @@ export interface Deck {
   createdAt: Date;
   updatedAt: Date;
   cardCount: number;
+  reverseMode: boolean;
   syncId?: string;
   syncStatus?: 'synced' | 'pending' | 'conflict';
   lastSyncedAt?: Date;
@@ -26,7 +27,8 @@ export function createDeck(
     targetLang,
     createdAt: now,
     updatedAt: now,
-    cardCount: 0
+    cardCount: 0,
+    reverseMode: false
   };
 }
 

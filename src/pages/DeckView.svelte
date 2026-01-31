@@ -11,6 +11,8 @@
   let deck: Deck | null = null;
   let showEditModal = false;
   let showDeleteConfirm = false;
+  let forwardStats = { total: 0, new: 0, learning: 0, review: 0, due: 0 };
+  let reverseStats = { total: 0, new: 0, learning: 0, review: 0, due: 0 };
 
   $: deckId = parseInt(params.id);
 
@@ -18,8 +20,17 @@
     deck = (await decks.get(deckId)) ?? null;
     if (deck) {
       await cards.loadForDeck(deckId);
+      await loadDeckStats();
     }
   });
+
+  async function loadDeckStats() {
+    if (deck) {
+      const dualStats = await cards.getDualStats(deckId);
+      forwardStats = dualStats.forward;
+      reverseStats = dualStats.reverse;
+    }
+  }
 
   function getLanguageName(code: string): string {
     const lang = LANGUAGES.find((l) => l.code === code);
@@ -69,36 +80,77 @@
       </p>
     </div>
 
-    <div class="grid grid-cols-4 gap-2 mb-6">
-      <div class="card text-center py-3">
-        <p class="text-2xl font-bold text-slate-100">{$cardStats.total}</p>
-        <p class="text-xs text-slate-500">Total</p>
-      </div>
-      <div class="card text-center py-3">
-        <p class="text-2xl font-bold text-blue-400">{$cardStats.new}</p>
-        <p class="text-xs text-slate-500">New</p>
-      </div>
-      <div class="card text-center py-3">
-        <p class="text-2xl font-bold text-orange-400">{$cardStats.learning}</p>
-        <p class="text-xs text-slate-500">Learning</p>
-      </div>
-      <div class="card text-center py-3">
-        <p class="text-2xl font-bold text-green-400">{$cardStats.due}</p>
-        <p class="text-xs text-slate-500">Due</p>
+    <!-- Forward Direction Stats -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">
+        {getLanguageName(deck.sourceLang)} → {getLanguageName(deck.targetLang)}
+      </h3>
+      <div class="grid grid-cols-4 gap-2">
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-slate-100">{forwardStats.total}</p>
+          <p class="text-xs text-slate-500">Total</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-blue-400">{forwardStats.new}</p>
+          <p class="text-xs text-slate-500">New</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-orange-400">{forwardStats.learning}</p>
+          <p class="text-xs text-slate-500">Learning</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-green-400">{forwardStats.due}</p>
+          <p class="text-xs text-slate-500">Due</p>
+        </div>
       </div>
     </div>
 
+    <!-- Reverse Direction Stats -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">
+        {getLanguageName(deck.targetLang)} → {getLanguageName(deck.sourceLang)}
+      </h3>
+      <div class="grid grid-cols-4 gap-2">
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-slate-100">{reverseStats.total}</p>
+          <p class="text-xs text-slate-500">Total</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-blue-400">{reverseStats.new}</p>
+          <p class="text-xs text-slate-500">New</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-orange-400">{reverseStats.learning}</p>
+          <p class="text-xs text-slate-500">Learning</p>
+        </div>
+        <div class="card text-center py-3">
+          <p class="text-2xl font-bold text-green-400">{reverseStats.due}</p>
+          <p class="text-xs text-slate-500">Due</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Buttons -->
     <div class="space-y-3 mb-6">
-      {#if $cardStats.due > 0 || $cardStats.new > 0}
-        <a href="#/deck/{deckId}/study" class="btn-primary w-full py-4 text-lg">
-          Study Now
-          {#if $cardStats.due > 0}
-            <span class="ml-2 opacity-75">({$cardStats.due} due)</span>
+      {#if forwardStats.due > 0 || forwardStats.new > 0}
+        <a href="#/deck/{deckId}/study/forward" class="btn-primary w-full py-4 text-lg">
+          Study Normal
+          {#if forwardStats.due > 0}
+            <span class="ml-2 opacity-75">({forwardStats.due} due)</span>
           {/if}
         </a>
       {/if}
 
-      <div class="grid grid-cols-2 gap-3">
+      {#if reverseStats.due > 0 || reverseStats.new > 0}
+        <a href="#/deck/{deckId}/study/reverse" class="btn-secondary w-full py-4 text-lg">
+          Study Reverse
+          {#if reverseStats.due > 0}
+            <span class="ml-2 opacity-75">({reverseStats.due} due)</span>
+          {/if}
+        </a>
+      {/if}
+
+      <div class="grid gap-3 grid-cols-2">
         <a href="#/deck/{deckId}/cards" class="btn-secondary text-center">
           View Cards
         </a>
@@ -145,3 +197,4 @@
     </button>
   </div>
 </Modal>
+

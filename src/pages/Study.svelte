@@ -3,9 +3,10 @@
   import { decks, cards, settings } from '$lib/stores';
   import { BackButton, StudyCard, RatingButtons, ProgressBar } from '$lib/components';
   import type { Card, Rating } from '$lib/types/card';
+  import type { StudyDirection } from '$lib/types/card';
   import type { Deck } from '$lib/types/deck';
 
-  export let params: { id: string };
+  export let params: { id: string; direction?: string };
 
   let deck: Deck | null = null;
   let studyQueue: Card[] = [];
@@ -15,6 +16,8 @@
   let sessionComplete = false;
 
   $: deckId = parseInt(params.id);
+  $: direction = (params.direction === 'reverse' ? 'reverse' : 'forward') as StudyDirection;
+  $: directionLabel = direction === 'forward' ? 'Normal' : 'Reverse';
   $: currentCard = studyQueue[currentIndex] ?? null;
 
   onMount(async () => {
@@ -26,7 +29,8 @@
       studyQueue = await cards.getStudyQueue(
         deckId,
         settingsData.dailyNewCards,
-        settingsData.dailyReviewCards
+        settingsData.dailyReviewCards,
+        direction
       );
 
       if (studyQueue.length === 0) {
@@ -43,7 +47,7 @@
     const rating = event.detail;
 
     if (currentCard) {
-      await cards.review(currentCard, rating);
+      await cards.review(currentCard, rating, direction);
 
       if (rating !== 'again') {
         correct++;
@@ -70,6 +74,13 @@
 
 <div class="page-container">
   <BackButton href="#/deck/{deckId}" />
+
+  <!-- Direction indicator -->
+  <div class="mb-4 text-center">
+    <span class="inline-block px-3 py-1 text-sm font-medium rounded bg-primary-500/20 text-primary-300">
+      {directionLabel} Mode
+    </span>
+  </div>
 
   {#if sessionComplete}
     <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -116,7 +127,7 @@
     </div>
 
     <div class="mb-6">
-      <StudyCard card={currentCard} {showAnswer} on:reveal={handleReveal} />
+      <StudyCard card={currentCard} {showAnswer} {direction} on:reveal={handleReveal} />
     </div>
 
     {#if showAnswer}

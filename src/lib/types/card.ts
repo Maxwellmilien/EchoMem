@@ -1,4 +1,5 @@
 export type CardState = 'new' | 'learning' | 'review' | 'relearning';
+export type StudyDirection = 'forward' | 'reverse';
 
 export interface SRSData {
   due: Date;
@@ -17,7 +18,9 @@ export interface Card {
   back: string;
   createdAt: Date;
   updatedAt: Date;
-  srsData: SRSData;
+  forwardSrsData: SRSData;
+  reverseSrsData: SRSData;
+  srsData?: SRSData; // Deprecated: kept for migration compatibility
   syncId?: string;
   syncStatus?: 'synced' | 'pending' | 'conflict';
   lastSyncedAt?: Date;
@@ -44,6 +47,7 @@ export function createCard(deckId: number, front: string, back: string): Omit<Ca
     back,
     createdAt: now,
     updatedAt: now,
-    srsData: createNewSRSData()
+    forwardSrsData: createNewSRSData(),
+    reverseSrsData: createNewSRSData()
   };
 }

@@ -1,4 +1,4 @@
-import type { Card, Rating, SRSData, CardState } from '$lib/types/card';
+import type { Card, Rating, SRSData, CardState, StudyDirection } from '$lib/types/card';
 import type { SRSProvider } from './types';
 
 const FSRS_PARAMS = {
@@ -87,9 +87,9 @@ function getNextState(currentState: CardState, rating: Rating): CardState {
 export class FSRSProvider implements SRSProvider {
   name = 'FSRS';
 
-  calculateNextReview(card: Card, rating: Rating): SRSData {
+  calculateNextReview(card: Card, rating: Rating, direction: StudyDirection = 'forward'): SRSData {
     const now = new Date();
-    const srs = card.srsData;
+    const srs = direction === 'forward' ? card.forwardSrsData : card.reverseSrsData;
 
     let newStability: number;
     let newDifficulty: number;
@@ -160,28 +160,45 @@ export class FSRSProvider implements SRSProvider {
     };
   }
 
-  getDueCards(cards: Card[], limit?: number): Card[] {
+  getDueCards(cards: Card[], direction: StudyDirection = 'forward', limit?: number): Card[] {
     const now = new Date();
     const dueCards = cards
-      .filter((card) => new Date(card.srsData.due) <= now)
-      .sort((a, b) => new Date(a.srsData.due).getTime() - new Date(b.srsData.due).getTime());
+      .filter((card) => {
+        const srs = direction === 'forward' ? card.forwardSrsData : card.reverseSrsData;
+        return new Date(srs.due) <= now;
+      })
+      .sort((a, b) => {
+        const aSrs = direction === 'forward' ? a.forwardSrsData : a.reverseSrsData;
+        const bSrs = direction === 'forward' ? b.forwardSrsData : b.reverseSrsData;
+        return new Date(aSrs.due).getTime() - new Date(bSrs.due).getTime();
+      });
 
     return limit ? dueCards.slice(0, limit) : dueCards;
   }
 
-  getNewCards(cards: Card[], limit?: number): Card[] {
+  getNewCards(cards: Card[], direction: StudyDirection = 'forward', limit?: number): Card[] {
     const newCards = cards
-      .filter((card) => card.srsData.state === 'new')
+      .filter((card) => {
+        const srs = direction === 'forward' ? card.forwardSrsData : card.reverseSrsData;
+        return srs.state === 'new';
+      })
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
     return limit ? newCards.slice(0, limit) : newCards;
   }
 
-  getReviewCards(cards: Card[], limit?: number): Card[] {
+  getReviewCards(cards: Card[], direction: StudyDirection = 'forward', limit?: number): Card[] {
     const now = new Date();
     const reviewCards = cards
-      .filter((card) => card.srsData.state === 'review' && new Date(card.srsData.due) <= now)
-      .sort((a, b) => new Date(a.srsData.due).getTime() - new Date(b.srsData.due).getTime());
+      .filter((card) => {
+        const srs = direction === 'forward' ? card.forwardSrsData : card.reverseSrsData;
+        return srs.state === 'review' && new Date(srs.due) <= now;
+      })
+      .sort((a, b) => {
+        const aSrs = direction === 'forward' ? a.forwardSrsData : a.reverseSrsData;
+        const bSrs = direction === 'forward' ? b.forwardSrsData : b.reverseSrsData;
+        return new Date(aSrs.due).getTime() - new Date(bSrs.due).getTime();
+      });
 
     return limit ? reviewCards.slice(0, limit) : reviewCards;
   }
