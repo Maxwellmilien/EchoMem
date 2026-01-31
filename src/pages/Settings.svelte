@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { settings } from '$lib/stores';
+  import { settings, decks } from '$lib/stores';
+  import { Modal } from '$lib/components';
+  import type { Deck } from '$lib/types/deck';
+  import { exportData } from '$lib/services/export';
+  import { downloadJSON, generateExportFilename } from '$lib/utils/export';
+  import { importData as importDataService } from '$lib/services/import';
+  import { readExportFile } from '$lib/utils/import';
 
   let dailyNewCards = 20;
   let dailyReviewCards = 100;
@@ -11,6 +17,20 @@
   let llmModel = '';
   let dictionaryProvider = 'mock';
   let dictionaryApiKey = '';
+
+  let showExportModal = false;
+  let includeSettings = false;
+  let includeApiKeys = false;
+  let selectedDeckIds: Set<number> = new Set();
+  let allDecks: Deck[] = [];
+  let exporting = false;
+  let exportError: string | null = null;
+
+  let showImportModal = false;
+  let importFile: File | null = null;
+  let importing = false;
+  let importError: string | null = null;
+  let importSuccess: string | null = null;
 
   onMount(async () => {
     const s = await settings.load();
@@ -49,6 +69,115 @@
       dictionaryProvider,
       dictionaryApiKey: dictionaryApiKey || undefined
     });
+  }
+
+  $: totalCards = allDecks
+    .filter(d => selectedDeckIds.has(d.id!))
+    .reduce((sum, d) => sum + d.cardCount, 0);
+  $: hasSelection = selectedDeckIds.size > 0 || includeSettings;
+
+  async function openExportModal() {
+    allDecks = await decks.load();
+    selectedDeckIds = new Set(allDecks.map(d => d.id!));
+    includeSettings = false;
+    includeApiKeys = false;
+    exportError = null;
+    showExportModal = true;
+  }
+
+  function toggleDeck(deckId: number) {
+    if (selectedDeckIds.has(deckId)) {
+      selectedDeckIds.delete(deckId);
+    } else {
+      selectedDeckIds.add(deckId);
+    }
+    selectedDeckIds = selectedDeckIds;
+  }
+
+  function selectAllDecks() {
+    selectedDeckIds = new Set(allDecks.map(d => d.id!));
+  }
+
+  function deselectAllDecks() {
+    selectedDeckIds = new Set();
+  }
+
+  async function handleExport() {
+    if (!hasSelection) {
+      exportError = 'Please select at least one item to export';
+      return;
+    }
+
+    exporting = true;
+    exportError = null;
+
+    try {
+      const data = await exportData(includeSettings, includeApiKeys, selectedDeckIds);
+      const filename = generateExportFilename();
+      downloadJSON(data, filename);
+      showExportModal = false;
+    } catch (error) {
+      exportError = error instanceof Error ? error.message : 'Export failed';
+    } finally {
+      exporting = false;
+    }
+  }
+
+  function openImportModal() {
+    importFile = null;
+    importError = null;
+    importSuccess = null;
+    showImportModal = true;
+  }
+
+  function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    importFile = input.files?.[0] || null;
+    importError = null;
+  }
+
+  async function handleImport() {
+    if (!importFile) {
+      importError = 'Please select a file to import';
+      return;
+    }
+
+    importing = true;
+    importError = null;
+    importSuccess = null;
+
+    try {
+      const exportedData = await readExportFile(importFile);
+      const result = await importDataService(exportedData);
+
+      if (result.errors.length > 0) {
+        importError = result.errors.join('; ');
+      }
+
+      const summary = [];
+      if (result.settingsImported) summary.push('Settings');
+      if (result.decksImported > 0) summary.push(`${result.decksImported} deck(s)`);
+      if (result.cardsImported > 0) summary.push(`${result.cardsImported} card(s)`);
+
+      if (summary.length > 0) {
+        importSuccess = `Successfully imported: ${summary.join(', ')}`;
+        // Reload settings and decks to reflect changes
+        await settings.load();
+        await decks.load();
+      } else if (result.errors.length === 0) {
+        importError = 'No data to import';
+      }
+
+      if (result.errors.length === 0) {
+        setTimeout(() => {
+          showImportModal = false;
+        }, 1500);
+      }
+    } catch (error) {
+      importError = error instanceof Error ? error.message : 'Import failed';
+    } finally {
+      importing = false;
+    }
   }
 </script>
 
@@ -214,5 +343,149 @@
         A flashcard app for language learning with spaced repetition.
       </p>
     </section>
+
+    <section class="card">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4">Data Management</h2>
+      <div class="space-y-2">
+        <button class="btn-primary w-full" on:click={openExportModal}>
+          Export Data
+        </button>
+        <button class="btn-secondary w-full" on:click={openImportModal}>
+          Import Data
+        </button>
+      </div>
+    </section>
   </div>
 </div>
+
+<Modal bind:open={showExportModal} title="Export Data" on:close={() => showExportModal = false}>
+  <div class="space-y-4">
+    {#if includeSettings && includeApiKeys}
+      <div class="bg-yellow-900/30 border border-yellow-600 rounded p-3 text-sm text-yellow-200">
+        ⚠️ Warning: This export will include API keys. Keep this file secure.
+      </div>
+    {/if}
+
+    <p class="text-slate-300 text-sm">Select items to export:</p>
+
+    <div class="flex gap-2">
+      <button class="btn-ghost text-xs" on:click={selectAllDecks}>Select All</button>
+      <button class="btn-ghost text-xs" on:click={deselectAllDecks}>Deselect All</button>
+    </div>
+
+    <div class="space-y-3">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          bind:checked={includeSettings}
+          class="w-4 h-4 rounded"
+        />
+        <span class="text-slate-200">Settings (preferences, providers)</span>
+      </label>
+
+      {#if includeSettings}
+        <label class="flex items-center gap-3 cursor-pointer ml-7">
+          <input
+            type="checkbox"
+            bind:checked={includeApiKeys}
+            class="w-4 h-4 rounded"
+          />
+          <span class="text-slate-300 text-sm">Include API keys</span>
+        </label>
+      {/if}
+
+      {#if allDecks.length > 0}
+        <div class="border-t border-slate-700 pt-3">
+          <p class="text-sm text-slate-400 mb-2">Decks:</p>
+          <div class="space-y-2 max-h-60 overflow-y-auto">
+            {#each allDecks as deck}
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedDeckIds.has(deck.id!)}
+                  on:change={() => toggleDeck(deck.id!)}
+                  class="w-4 h-4 rounded"
+                />
+                <span class="text-slate-200">
+                  {deck.name}
+                  <span class="text-slate-500">({deck.cardCount} cards)</span>
+                </span>
+              </label>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    {#if hasSelection}
+      <p class="text-sm text-slate-400">
+        Total: {selectedDeckIds.size} deck{selectedDeckIds.size !== 1 ? 's' : ''}, {totalCards} card{totalCards !== 1 ? 's' : ''}
+      </p>
+    {/if}
+
+    {#if exportError}
+      <p class="text-sm text-red-400">{exportError}</p>
+    {/if}
+
+    <div class="flex gap-3">
+      <button class="btn-secondary flex-1" on:click={() => showExportModal = false}>
+        Cancel
+      </button>
+      <button
+        class="btn-primary flex-1"
+        on:click={handleExport}
+        disabled={!hasSelection || exporting}
+      >
+        {exporting ? 'Exporting...' : `Export Selected`}
+      </button>
+    </div>
+  </div>
+</Modal>
+
+<Modal bind:open={showImportModal} title="Import Data" on:close={() => showImportModal = false}>
+  <div class="space-y-4">
+    <p class="text-slate-300 text-sm">Select a JSON export file to import:</p>
+
+    <div>
+      <label for="importFile" class="label">Choose File</label>
+      <input
+        id="importFile"
+        type="file"
+        accept=".json"
+        on:change={handleFileSelect}
+        class="input"
+      />
+    </div>
+
+    {#if importFile}
+      <p class="text-sm text-slate-400">
+        Selected: <span class="text-slate-200 font-medium">{importFile.name}</span>
+      </p>
+    {/if}
+
+    {#if importError}
+      <div class="bg-red-900/30 border border-red-700 rounded p-3 text-sm text-red-300">
+        {importError}
+      </div>
+    {/if}
+
+    {#if importSuccess}
+      <div class="bg-green-900/30 border border-green-700 rounded p-3 text-sm text-green-300">
+        ✓ {importSuccess}
+      </div>
+    {/if}
+
+    <div class="flex gap-3">
+      <button class="btn-secondary flex-1" on:click={() => showImportModal = false}>
+        Cancel
+      </button>
+      <button
+        class="btn-primary flex-1"
+        on:click={handleImport}
+        disabled={!importFile || importing}
+      >
+        {importing ? 'Importing...' : 'Import'}
+      </button>
+    </div>
+  </div>
+</Modal>
