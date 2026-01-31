@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { settings, decks } from '$lib/stores';
-  import { Modal } from '$lib/components';
+  import { Modal, SelectableItem } from '$lib/components';
   import type { Deck } from '$lib/types/deck';
   import { exportData } from '$lib/services/export';
   import { downloadJSON, generateExportFilename } from '$lib/utils/export';
@@ -374,43 +374,33 @@
     </div>
 
     <div class="space-y-3">
-      <label class="flex items-center gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          bind:checked={includeSettings}
-          class="w-4 h-4 rounded"
-        />
-        <span class="text-slate-200">Settings (preferences, providers)</span>
-      </label>
+      <SelectableItem
+        bind:selected={includeSettings}
+        label="Settings"
+        description="Preferences, translation provider, and LLM settings"
+      />
 
       {#if includeSettings}
-        <label class="flex items-center gap-3 cursor-pointer ml-7">
-          <input
-            type="checkbox"
-            bind:checked={includeApiKeys}
-            class="w-4 h-4 rounded"
+        <div class="ml-2 pt-2">
+          <SelectableItem
+            bind:selected={includeApiKeys}
+            label="Include API Keys"
+            description="Warning: This will include sensitive API credentials"
           />
-          <span class="text-slate-300 text-sm">Include API keys</span>
-        </label>
+        </div>
       {/if}
 
       {#if allDecks.length > 0}
-        <div class="border-t border-slate-700 pt-3">
-          <p class="text-sm text-slate-400 mb-2">Decks:</p>
-          <div class="space-y-2 max-h-60 overflow-y-auto">
-            {#each allDecks as deck}
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedDeckIds.has(deck.id!)}
-                  on:change={() => toggleDeck(deck.id!)}
-                  class="w-4 h-4 rounded"
-                />
-                <span class="text-slate-200">
-                  {deck.name}
-                  <span class="text-slate-500">({deck.cardCount} cards)</span>
-                </span>
-              </label>
+        <div class="border-t border-slate-700 pt-4">
+          <p class="text-sm text-slate-400 mb-3 font-medium">Decks to Export:</p>
+          <div class="space-y-2 max-h-60 overflow-y-auto pr-2">
+            {#each allDecks as deck (deck.id)}
+              <SelectableItem
+                selected={selectedDeckIds.has(deck.id!)}
+                on:toggle={() => toggleDeck(deck.id!)}
+                label={deck.name}
+                description={`${deck.cardCount} card${deck.cardCount !== 1 ? 's' : ''}`}
+              />
             {/each}
           </div>
         </div>

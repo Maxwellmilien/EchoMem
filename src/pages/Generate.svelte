@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { decks, settings, cards } from '$lib/stores';
-  import { Modal } from '$lib/components';
+  import { Modal, SelectableItem } from '$lib/components';
   import { LANGUAGES } from '$lib/types/deck';
   import {
     getLLMProvider,
@@ -220,36 +220,30 @@
   {/if}
 
   {#if phase === 'selection' && wordAnalysis}
-    <div class="space-y-4">
+    <div class="space-y-6">
       <p class="text-slate-300">Select which word forms you want to generate example sentences for:</p>
 
       {#each groupByCategory(wordAnalysis.forms) as [category, forms]}
-        <fieldset class="space-y-2">
-          <legend class="label text-sm">{capitalize(category)} Forms</legend>
-          <div class="space-y-2 ml-2">
+        <fieldset class="space-y-3">
+          <legend class="label text-sm font-semibold text-slate-300">{capitalize(category)} Forms</legend>
+          <div class="space-y-2">
             {#each forms as form}
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  bind:checked={form.selected}
-                  class="w-4 h-4 rounded"
-                />
-                <span class="text-slate-200">{form.formType}: <span class="text-slate-400">{form.text}</span></span>
-              </label>
+              <SelectableItem
+                bind:selected={form.selected}
+                label="{form.formType}"
+                description={form.text}
+              />
             {/each}
           </div>
         </fieldset>
       {/each}
 
       <fieldset>
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            bind:checked={includeExpressions}
-            class="w-4 h-4 rounded"
-          />
-          <span class="text-slate-200">Include Common Expressions</span>
-        </label>
+        <SelectableItem
+          bind:selected={includeExpressions}
+          label="Include Common Expressions"
+          description="Add example sentences with common idioms"
+        />
       </fieldset>
 
       <div class="flex gap-3">

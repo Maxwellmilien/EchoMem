@@ -9,3 +9,4 @@ export { default as ProgressBar } from './ProgressBar.svelte';
 export { default as BackButton } from './BackButton.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
 export { default as Modal } from './Modal.svelte';
+export { default as SelectableItem } from './SelectableItem.svelte';
