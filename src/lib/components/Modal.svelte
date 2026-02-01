@@ -20,6 +20,7 @@
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
+<svelte:body class={open ? 'overflow-hidden' : ''} />
 
 {#if open}
   <div
