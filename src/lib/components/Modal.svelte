@@ -23,7 +23,7 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60"
+    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60"
     on:click={handleBackdropClick}
     on:keydown={handleKeydown}
     role="button"
@@ -31,7 +31,7 @@
     aria-label="Close modal"
   >
     <div
-      class="w-full max-w-lg bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[85vh] flex flex-col"
+      class="w-full sm:max-w-lg bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[100dvh] sm:max-h-[85vh] flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -51,7 +51,7 @@
         </div>
       {/if}
 
-      <div class="p-4 overflow-y-auto">
+      <div class="p-4 overflow-y-auto flex-1">
         <slot />
       </div>
     </div>
