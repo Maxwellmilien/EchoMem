@@ -17,10 +17,17 @@
       dispatch('close');
     }
   }
+
+  $: {
+    if (open) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
-<svelte:body class={open ? 'overflow-hidden' : ''} />
 
 {#if open}
   <div
