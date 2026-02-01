@@ -31,7 +31,7 @@
     aria-label="Close modal"
   >
     <div
-      class="w-full sm:max-w-lg bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[100dvh] sm:max-h-[85vh] flex flex-col"
+      class="w-full sm:max-w-lg bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-xl h-[90vh] flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -45,7 +45,12 @@
             aria-label="Close"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
